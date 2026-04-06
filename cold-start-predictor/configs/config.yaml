@@ -1,0 +1,120 @@
+# configs/config.yaml
+# ──────────────────────────────────────────────────────────────────────────────
+# All tunable parameters for the cold-start prediction system.
+# No values are hardcoded anywhere else in the codebase.
+# ──────────────────────────────────────────────────────────────────────────────
+
+data:
+  raw_dir: "data/raw" # Kaggle dataset directory (Excel/CSV)
+  processed_dir: "data/processed" # Output for processed parquet files
+  chunk_size: 500_000 # rows per chunk during loading
+  top_n_collections: 100 # keep top N collections by frequency
+
+  # Kaggle AWS Cold Start Dataset columns (auto-detected, case-insensitive)
+  # Actual CSV column is 'instance_events_type' (an event-type code, not a count).
+  # Only rows whose instance_events_type is in invocation_event_types are kept
+  # so that the time-series counts actual invocation events (SUBMIT=0, SCHEDULE=1).
+  invocation_event_types: [0, 1]  # event type codes that represent real invocations
+
+  kaggle_columns:
+    time: "time"                             # Timestamp column (microseconds)
+    collection_id: "collection_id"           # Job/collection identifier
+    instance_events_type: "instance_events_type"  # Event-type code column
+    scheduling_class: "scheduling_class"     # Scheduling class/priority
+    collection_type: "collection_type"       # Type of collection
+    priority: "priority"                     # Priority level
+    machine_id: "machine_id"                 # Machine identifier
+    instance_index: "instance_index"         # Instance index
+    alloc_collection_id: "alloc_collection_id" # Allocated collection ID
+
+timeseries:
+  window_seconds: 300 # 5-minute aggregation windows
+  cold_start_threshold_min: 30 # inactivity gap (minutes) → cold start
+
+features:
+  rolling_window_k: 6 # rolling mean/std lookback (in windows)
+  sequence_length: 10 # LSTM input sequence length (windows)
+  use_task_usage: false # enable CPU/memory features if data present
+
+split:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15 # remainder
+
+arima:
+  max_p: 2
+  max_d: 2
+  max_q: 2
+  seasonal: false  # disable seasonal ARIMA; m=12 was wrong for 5-min windows
+  m: 1             # not used when seasonal=false; daily cycle = 288 windows
+  min_series_length: 20   # skip collections with fewer non-zero windows
+  max_series_len: 500     # cap training series at last N windows (ARIMA is O(n²))
+  information_criterion: "aic"
+  n_jobs: -1  # use all CPU cores; safe since we capped series length
+
+lstm:
+  layer1_units: 256
+  layer2_units: 128
+  dropout_rate: 0.2
+  learning_rate: 0.0001
+  batch_size: 512
+  max_epochs: 100
+  early_stopping_patience: 10
+  reduce_lr_patience: 5
+  reduce_lr_factor: 0.5
+
+  # Grid search space (used during hyperparameter tuning)
+  grid_search:
+    layer1_units: [64, 128, 256]
+    layer2_units: [32, 64, 128]
+    dropout_rate: [0.2, 0.3, 0.4]
+    learning_rate: [0.0001, 0.001, 0.01]
+    batch_size: [32, 64, 128]
+
+models:
+  save_dir: "models"
+  arima_filename: "arima_models.pkl"
+  lstm_filename: "lstm_model.keras"
+  scaler_filename: "scaler.pkl"
+  metadata_filename: "training_metadata.json"
+
+decision:
+  # 'Peak Recall' Research Policy
+  policy_method: "percentile"  # Capture global risk
+  policy_value: 67            # Target: >25% Reduction
+  smear_threshold: 92         # Confident smearing
+  ema_alpha: 1.0              # Zero-lag triggers
+  persistence_windows: 1      # Immediate response
+  cooldown_windows: 0         # No cooldown for maximum capture
+  lead_buffer: 2              # Double-smearing for burst capture
+  use_inverse_scale: true     
+  
+  target_over_provision_rate: 0.20 # acceptable fraction of wasted warm-ups
+  alpha: 0.05 # threshold update step size
+  min_threshold: 0.001
+  max_threshold: 0.5
+
+aws:
+  region: "us-east-1"
+  lambda_function_name: "cold-start-warmer"
+  lambda_runtime: "python3.11"
+  lambda_timeout_seconds: 10
+  lambda_memory_mb: 128
+  eventbridge_rule_name: "cold-start-prewarm-rule"
+  schedule_expression: "rate(5 minutes)"
+  warm_up_invocation_type: "Event" # async fire-and-forget
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  log_level: "info"
+  cors_origins: ["http://localhost:3000"]
+
+monitoring:
+  metrics_file: "logs/metrics_history.jsonl"
+  retrain_interval_hours: 168 # weekly offline retraining
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+  file: "logs/system.log"

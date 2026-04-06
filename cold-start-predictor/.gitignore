@@ -1,0 +1,40 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Large Datasets
+data/raw/
+data/processed/
+data/external/
+
+# ML Model Artifacts (Crucial - too large for GitHub)
+models/*.pkl
+models/*.keras
+models/*.h5
+models/*.onnx
+models/training_metadata.json
+
+# Reports & Logs
+reports/figures/*.png
+logs/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE / OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+*.pkl
+*.h5
+*.pt
+*.joblib
+data/
+__pycache__/
+*.pyc
+.env

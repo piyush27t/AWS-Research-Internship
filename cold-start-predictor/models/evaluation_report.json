@@ -1,0 +1,14 @@
+{
+  "arima_mae": 0.0874,
+  "arima_rmse": 0.5704,
+  "lstm_mae": 0.001,
+  "lstm_rmse": 0.0099,
+  "baseline_cold_start_rate": 0.3554,
+  "always_warm_cold_start_rate": 0.0,
+  "adaptive_cold_start_rate": 0.2118,
+  "baseline_cost_rel": 1.0,
+  "always_warm_cost_rel": 3.0485,
+  "adaptive_cost_rel": 31.1784,
+  "over_provision_rate": 0.9455,
+  "cold_start_reduction_pct": 40.4255
+}

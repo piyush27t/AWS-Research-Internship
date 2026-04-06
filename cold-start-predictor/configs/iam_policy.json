@@ -1,0 +1,40 @@
+{
+  "_comment": "Minimal IAM policy for the cold-start pre-warming system.",
+  "_usage": "Attach to the IAM role used by the prediction service and EventBridge.",
+
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeWarmupLambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction"
+      ],
+      "Resource": "arn:aws:lambda:*:*:function:cold-start-warmer"
+    },
+    {
+      "Sid": "ManageEventBridgeRule",
+      "Effect": "Allow",
+      "Action": [
+        "events:PutRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:DeleteRule",
+        "events:DescribeRule",
+        "events:EnableRule",
+        "events:DisableRule"
+      ],
+      "Resource": "arn:aws:events:*:*:rule/cold-start-prewarm-rule"
+    },
+    {
+      "Sid": "AddLambdaPermission",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:AddPermission",
+        "lambda:RemovePermission",
+        "lambda:GetFunction"
+      ],
+      "Resource": "arn:aws:lambda:*:*:function:cold-start-warmer"
+    }
+  ]
+}
