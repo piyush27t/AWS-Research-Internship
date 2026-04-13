@@ -2,6 +2,7 @@
   "name": "cold-start-dashboard",
   "version": "1.0.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -12,9 +13,16 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
   "proxy": "http://localhost:8000",
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
     "development": ["last 1 chrome version"]
