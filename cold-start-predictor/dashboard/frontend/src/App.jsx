@@ -33,7 +33,7 @@ ChartJS.register(
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const POLL_INTERVAL_MS = 30_000;
-const API_BASE = "";   // proxied via package.json proxy field
+const API_BASE = "https://aws-research-internship.onrender.com";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const lineChartOptions = (titleText, yLabel, yMin = 0, yMax = null) => ({

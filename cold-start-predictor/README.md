@@ -1,131 +1,89 @@
-# Adaptive Cold-Start Prediction & Pre-Warming for AWS Lambda
+# 🚀 Adaptive Cold-Start Predictor & Pre-Warmer for AWS Lambda
 
-End-to-end pipeline: Google Cluster trace → ARIMA + LSTM forecasting → AWS EventBridge pre-warming → real-time dashboard.
+This research project implements an end-to-end system for predicting and eliminating cold starts in AWS Lambda using **Stacked LSTM Forecasting** and an **Adaptive Thresholding Feedback Loop**.
 
 ---
 
-## Project Structure
+## 🏗️ System Architecture
 
-```
-cold-start-predictor/
-├── configs/
-│   └── config.yaml              # All tunable parameters
-├── data/
-│   ├── raw/
-│   │   ├── task_events/         # Downloaded .csv.gz files go here
-│   │   └── task_usage/          # Optional
-│   └── processed/               # Auto-generated after preprocessing
-├── models/                      # Saved model artifacts
-├── src/
-│   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   ├── loader.py            # Chunked dataset loading
-│   │   ├── timeseries.py        # Windowed aggregation
-│   │   ├── cold_start_sim.py    # Cold start simulation
-│   │   └── features.py          # Feature engineering
-│   ├── forecasting/
-│   │   ├── __init__.py
-│   │   ├── arima_model.py       # ARIMA per-function baseline
-│   │   ├── lstm_model.py        # Stacked LSTM model
-│   │   └── evaluator.py         # MAE / RMSE / cold start metrics
-│   ├── aws/
-│   │   ├── __init__.py
-│   │   ├── eventbridge.py       # EventBridge rule management
-│   │   ├── lambda_warmer.py     # Warm-up invocation dispatcher
-│   │   └── iam_validator.py     # Permission checks
-│   └── api/
-│       ├── __init__.py
-│       ├── app.py               # FastAPI application
-│       └── feedback_loop.py     # Adaptive threshold updater
-├── dashboard/
-│   └── frontend/                # React + Chart.js dashboard
-│       ├── package.json
-│       └── src/
-│           ├── App.jsx
-│           └── components/
-├── scripts/
-│   ├── download_data.py         # Automated dataset downloader
-│   ├── wget_download.sh         # wget fallback
-│   ├── preprocess.py            # Run full preprocessing pipeline
-│   └── train.py                 # Train ARIMA + LSTM
-├── tests/
-│   ├── test_preprocessing.py
-│   ├── test_forecasting.py
-│   └── test_api.py
-├── lambda_warmer/
-│   └── handler.py               # Deploy this to AWS Lambda
-├── requirements.txt
-├── DATASET_DOWNLOAD.md
-└── README.md
+```mermaid
+graph TD
+    subgraph "Local Environment"
+        D[React Dashboard] -- Port 3000 --> F[Local Node Proxy]
+        T[Traffic Generator] -- Boto3/IAM --> AL
+    end
+
+    subgraph "Render Cloud"
+        B[FastAPI Backend] -- LSTM Model --> P[Prediction Logic]
+        P -- Adaptive λ --> FL[Feedback Loop]
+    end
+
+    subgraph "AWS Cloud"
+        EB[EventBridge Trigger] -- 5 min Interval --> OW[Orchestrator Lambda]
+        OW -- POST /predict --> B
+        B -- Result --> OW
+        OW -- Async Invoke --> AL[my-dummy-function]
+        OW -- POST /feedback --> B
+    end
+
+    F -- HTTPS --> B
 ```
 
 ---
 
-## Quick Start
+## 🛠️ Components
 
-### 1. Install Dependencies
-```bash
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+### 1. The Brain (FastAPI Backend)
+*   **Host**: Render (`https://aws-research-internship.onrender.com`)
+*   **Logic**: Uses a Stacked LSTM model trained on the Google Cluster Trace dataset to forecast future invocation counts for serverless functions.
+*   **Thresholding**: Employs an adaptive PID-like controller to update the pre-warming threshold ($\lambda$) based on observed over-provisioning and cold-start rates.
 
-### 2. Download Dataset
-See **DATASET_DOWNLOAD.md** for full instructions.
+### 2. The Orchestrator (AWS Lambda)
+*   **Name**: `cold-start-warmer`
+*   **Role**: Coordinates the prediction-warmup cycle. It fetches recent window counts, gets decisions from Render, and fires keep-warm requests to target Lambdas.
 
-Quick download (50 parts, ~1.5 GB):
-```bash
-python scripts/download_data.py --parts 50 --output data/raw/
-```
+### 3. The Monitor (React Dashboard)
+*   **Host**: Local (`localhost:3000`)
+*   **Goal**: Real-time visualization of the prediction accuracy (MAE), current threshold evolution, and global cold-start reduction metrics.
 
-### 3. Preprocess
-```bash
-python scripts/preprocess.py
-```
-Output: `data/processed/timeseries.parquet`, `data/processed/features.parquet`
+---
 
-### 4. Train Models
-```bash
-python scripts/train.py
-```
-Output: `models/arima_models.pkl`, `models/lstm_model.keras`, `models/scaler.pkl`
+## 🚀 Deployment Guide
 
-### 5. Run API Server
-```bash
-uvicorn src.api.app:app --reload --port 8000
-```
+### A. Backend Setup (Render)
+1.  Push the repository to GitHub.
+2.  In Render dashboard, create a **New Web Service** -> **Docker**.
+3.  Set **Root Directory** to `cold-start-predictor`.
+4.  Set **Instance Type** to `Free`.
 
-### 6. Run Dashboard
+### B. AWS Lambda Setup (Manual)
+1.  **Deploy `my-dummy-function`**: Use the code in `lambda_warmer/dummy_function.py`.
+2.  **Deploy `cold-start-warmer`**: Use the code in `lambda_warmer/handler.py`.
+    -   Set Env Var `API_URL`: Your Render URL.
+    -   Set Env Var `WATCHED_FUNCTIONS`: `my-dummy-function`.
+3.  **EventBridge**: Create a rule to trigger `cold-start-warmer` every 5 minutes.
+
+### C. Local Dashboard Setup
 ```bash
 cd dashboard/frontend
-npm install && npm start
-```
-
-### 7. AWS Deployment (optional)
-```bash
-# Configure AWS credentials first
-aws configure
-
-# Deploy EventBridge rule
-python -c "from src.aws.eventbridge import EventBridgeManager; EventBridgeManager().deploy()"
+npm install
+npm start
 ```
 
 ---
 
-## Configuration
+## 🚦 Research Simulation
 
-All parameters live in `configs/config.yaml`. No hardcoded values elsewhere.
+To test the system's effectiveness, use the included traffic generator. It simulates "bursty" real-world traffic patterns:
+
+```powershell
+# In a new terminal
+.\.venv\Scripts\python.exe scripts/generate_traffic.py
+```
+
+Watch your **React Dashboard** and browser console to see the system react to bursts by lowering the threshold and pre-warming ahead of time!
 
 ---
 
-## AWS Free Tier Compatibility
-
-- EventBridge: 14M events/month free → 1 rule × 12/hour × 720h = 8,640 events/month ✓
-- Lambda: 1M requests/month free → 8,640 warm-up calls ✓
-- API Gateway: 1M calls/month free ✓
-
----
-
-## References
-
-See paper: *Adaptive Cold-Start Prediction and Pre-Warming for AWS*, Pune Institute of Computer Technology.
+## 📚 References
+Based on the research paper: *Adaptive Cold-Start Prediction and Pre-Warming for AWS*, Pune Institute of Computer Technology.

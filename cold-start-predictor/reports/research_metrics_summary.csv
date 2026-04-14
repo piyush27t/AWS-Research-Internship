@@ -1,0 +1,9 @@
+Metric,Value,Unit,Description
+LSTM Mean Absolute Error (MAE),0.0010,counts,Accuracy of workload forecasting
+LSTM Root Mean Square Error (RMSE),0.0099,counts,Standard deviation of prediction errors
+Baseline Cold Start Rate,35.54,%,Observed rate without pre-warming
+Adaptive Cold Start Rate,21.18,%,Rate achieved with our LSTM policy
+Cold Start Reduction,40.43,%,Percentage reduction in cold starts
+Over-provisioning Rate,94.55,%,Container utilization efficiency
+Relative Cost Efficiency,31.18,x,Cost factor compared to baseline
+ARIMA MAE (Baseline),0.0874,counts,Accuracy of the traditional ARIMA model
