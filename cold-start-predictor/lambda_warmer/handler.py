@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # ── config from environment ────────────────────────────────────────────────────
-API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
+API_URL = os.environ.get("API_URL", "https://aws-research-internship.onrender.com").rstrip("/")
 WATCHED_FUNCTIONS_RAW = os.environ.get("WATCHED_FUNCTIONS", "my-dummy-function")
 WATCHED_FUNCTIONS: list[str] = [f.strip() for f in WATCHED_FUNCTIONS_RAW.split(",") if f.strip()]
 
