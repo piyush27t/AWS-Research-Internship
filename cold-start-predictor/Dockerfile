@@ -9,20 +9,18 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir mangum
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY configs/ ./configs/
 COPY src/ ./src/
 COPY models/ ./models/
 
-# Expose port
+# Create logs directory
+RUN mkdir -p logs && chmod 777 logs
+
+# Expose port (Render will use $PORT)
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
-
-# Start application
-CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start application - Use shell form to expand environment variables
+CMD uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}
