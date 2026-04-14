@@ -79,6 +79,7 @@ models:
   metadata_filename: "training_metadata.json"
 
 decision:
+  initial_threshold: 0.1         # Starting threshold λ₀ for the feedback loop
   # 'Peak Recall' Research Policy
   policy_method: "percentile"  # Capture global risk
   policy_value: 67            # Target: >25% Reduction
