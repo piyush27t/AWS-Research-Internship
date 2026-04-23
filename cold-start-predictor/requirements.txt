@@ -17,3 +17,4 @@ typing_extensions==4.15.0
 anyio==4.13.0
 starlette==1.0.0
 boto3==1.34.0
+python-dotenv==1.0.1

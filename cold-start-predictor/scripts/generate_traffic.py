@@ -2,6 +2,10 @@ import boto3
 import json
 import time
 import random
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configuration
 FUNCTION_NAME = "my-dummy-function"

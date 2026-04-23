@@ -44,7 +44,7 @@ ChartJS.register(
 const POLL_INTERVAL_MS = parseInt(
   process.env.REACT_APP_POLL_INTERVAL || "30000",
 );
-const API_BASE = process.env.REACT_APP_API_BASE || "";
+const API_BASE = process.env.REACT_APP_API_BASE || "https://aws-research-internship.onrender.com";
 
 // ── Chart Options ──────────────────────────────────────────────────────────────
 const lineChartOptions = (titleText, yLabel, yMin = 0, yMax = null) => ({
